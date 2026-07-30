@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import PageHeader from '@/components/PageHeader';
 import { decodeShareToken, decryptClient } from '@/libs/client-crypto';
 import { formatDateTime, formatRelativeFromNow } from '@/libs/datetime';
 import type { RevealSecretResponse, SecretMetaResponse } from '@/types';
@@ -119,8 +118,6 @@ function SecretView() {
     return (
         <div className="container mx-auto bg-stone-50 text-stone-900 p-4 md:p-6">
             <div className="max-w-2xl mx-auto">
-                <PageHeader icon="icon-[mdi--encryption-expiration]" title="One Time Secret" />
-
                 <AnimatePresence mode="wait">
                     {viewState === 'loading' && (
                         <motion.div

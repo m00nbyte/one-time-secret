@@ -65,6 +65,12 @@ export interface StatsHourlyPoint {
     expired: number;
 }
 
+export interface StatsBusiestDay {
+    date: string | null;
+    totalEvents: number;
+    peakHour: number | null;
+}
+
 export interface StatsResponse {
     success: boolean;
     data?: {
@@ -76,6 +82,7 @@ export interface StatsResponse {
             withPassword: number;
             withoutPassword: number;
         };
+        busiestDay: StatsBusiestDay;
         timeSeries: StatsTimeSeriesPoint[];
         hourly: StatsHourlyPoint[];
     };
@@ -84,7 +91,7 @@ export interface StatsResponse {
 
 export interface StatItem {
     icon: string;
-    value: number;
+    value: number | string;
     label: string;
     accent: string;
     color: string;

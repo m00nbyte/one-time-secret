@@ -7,7 +7,7 @@ import dbConnect from '@/libs/mongodb';
 import { checkRateLimit, rateLimitResponse } from '@/libs/rate-limit';
 import Event from '@/models/Event';
 import Stats from '@/models/Stats';
-import type { StatsHourlyPoint, StatsResponse, StatsTimeSeriesPoint } from '@/types';
+import type { StatsBusiestDay, StatsHourlyPoint, StatsResponse, StatsTimeSeriesPoint } from '@/types';
 
 function getMongoTimezone(now: Date): string {
     const offsetMinutes = -now.getTimezoneOffset();
@@ -57,8 +57,6 @@ export async function GET(req: NextRequest) {
         const expiredEvents = statsDoc?.totalExpired ?? 0;
         const withPassword = statsDoc?.totalWithPassword ?? 0;
         const withoutPassword = statsDoc?.totalWithoutPassword ?? 0;
-
-        // 30-day daily aggregation
         const dailyAgg = await Event.aggregate<{
             _id: { date: string; type: string };
             count: number;
@@ -204,6 +202,124 @@ export async function GET(req: NextRequest) {
             }
         }
 
+        // Busiest day
+        let peak30Day = { date: '', totalEvents: 0 };
+        let peak30DayHour = 0;
+
+        const dailyHourlyAgg = await Event.aggregate<{
+            _id: { date: string; hour: number };
+            count: number;
+        }>([
+            {
+                $match: {
+                    createdAt: { $gte: thirtyDaysAgo },
+                    type: { $in: ['created', 'consumed', 'locked'] }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        date: {
+                            $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone }
+                        },
+                        hour: { $hour: { date: '$createdAt', timezone } }
+                    },
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const dailyHourlyExpiredAgg = await Event.aggregate<{
+            _id: { date: string; hour: number };
+            count: number;
+        }>([
+            {
+                $match: {
+                    type: 'expired',
+                    expiresAt: { $gte: thirtyDaysAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        date: {
+                            $dateToString: { format: '%Y-%m-%d', date: '$expiresAt', timezone }
+                        },
+                        hour: { $hour: { date: '$expiresAt', timezone } }
+                    },
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const dailyHourlyMap = new Map<string, Map<number, number>>();
+        for (const row of dailyHourlyAgg) {
+            let dayMap2 = dailyHourlyMap.get(row._id.date);
+            if (!dayMap2) {
+                dayMap2 = new Map();
+                dailyHourlyMap.set(row._id.date, dayMap2);
+            }
+            dayMap2.set(row._id.hour, (dayMap2.get(row._id.hour) ?? 0) + row.count);
+        }
+        for (const row of dailyHourlyExpiredAgg) {
+            let dayMap2 = dailyHourlyMap.get(row._id.date);
+            if (!dayMap2) {
+                dayMap2 = new Map();
+                dailyHourlyMap.set(row._id.date, dayMap2);
+            }
+            dayMap2.set(row._id.hour, (dayMap2.get(row._id.hour) ?? 0) + row.count);
+        }
+
+        for (const point of dayMap.values()) {
+            const total = point.created + point.consumed + point.locked + point.expired;
+            if (total > peak30Day.totalEvents) {
+                peak30Day = { date: point.date, totalEvents: total };
+
+                const hourMap2 = dailyHourlyMap.get(point.date);
+                if (hourMap2) {
+                    let bestHour = 0;
+                    let bestCount = 0;
+                    for (const [h, c] of hourMap2) {
+                        if (c > bestCount) {
+                            bestCount = c;
+                            bestHour = h;
+                        }
+                    }
+                    peak30DayHour = bestHour;
+                }
+            }
+        }
+
+        const storedBusiest = statsDoc?.busiestDay;
+        const storedBusiestDate = storedBusiest?.date ? formatLocalDate(new Date(storedBusiest.date)) : null;
+        const storedBusiestCount = storedBusiest?.totalEvents ?? 0;
+
+        let busiestDay: StatsBusiestDay;
+
+        if (peak30Day.totalEvents > storedBusiestCount) {
+            busiestDay = { date: peak30Day.date, totalEvents: peak30Day.totalEvents, peakHour: peak30DayHour };
+
+            const [yy, mm, dd] = peak30Day.date.split('-').map(Number);
+            const peakDate = new Date(yy, mm - 1, dd);
+
+            Stats.updateOne(
+                { name: 'global' },
+                {
+                    $set: {
+                        'busiestDay.date': peakDate,
+                        'busiestDay.totalEvents': peak30Day.totalEvents,
+                        'busiestDay.peakHour': peak30DayHour
+                    }
+                }
+            ).catch(() => {});
+        } else {
+            busiestDay = {
+                date: storedBusiestDate,
+                totalEvents: storedBusiestCount,
+                peakHour: storedBusiest?.peakHour ?? null
+            };
+        }
+
         const body: StatsResponse = {
             success: true,
             data: {
@@ -215,6 +331,7 @@ export async function GET(req: NextRequest) {
                     withPassword,
                     withoutPassword
                 },
+                busiestDay,
                 timeSeries: Array.from(dayMap.values()),
                 hourly: Array.from(hourMap.values())
             }

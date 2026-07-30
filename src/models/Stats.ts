@@ -2,6 +2,12 @@
 
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface IBusiestDay {
+    date: Date;
+    totalEvents: number;
+    peakHour: number;
+}
+
 export interface IStats extends Document {
     name: string;
     totalCreated: number;
@@ -10,6 +16,7 @@ export interface IStats extends Document {
     totalExpired: number;
     totalWithPassword: number;
     totalWithoutPassword: number;
+    busiestDay: IBusiestDay;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -45,6 +52,20 @@ const StatsSchema = new Schema<IStats>(
         totalWithoutPassword: {
             type: Number,
             default: 0
+        },
+        busiestDay: {
+            date: {
+                type: Date,
+                default: null
+            },
+            totalEvents: {
+                type: Number,
+                default: 0
+            },
+            peakHour: {
+                type: Number,
+                default: 0
+            }
         }
     },
     {

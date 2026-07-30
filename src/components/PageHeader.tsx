@@ -10,7 +10,7 @@ const PageHeader = ({ icon, title, text }: { icon: string; title: string; text?:
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="mb-8 text-center"
+            className="mt-8 text-center"
         >
             <div className="flex items-center justify-center gap-3 mb-3">
                 <span className={`${icon} text-4xl text-sky-700`}></span>

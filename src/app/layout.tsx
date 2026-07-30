@@ -4,7 +4,10 @@ import '@/styles/global.sass';
 
 import type { Metadata } from 'next';
 import { Fira_Mono, Fira_Sans } from 'next/font/google';
+import { headers } from 'next/headers';
 import Link from 'next/link';
+
+import PageHeader from '@/components/PageHeader';
 
 const firaSans = Fira_Sans({
     weight: '500',
@@ -43,31 +46,44 @@ export const metadata: Metadata = {
     }
 };
 
-function RootLayout({
+async function RootLayout({
     children
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const headerList = await headers();
+    const pathname = headerList.get('x-pathname') || '/';
+    const isShown = ['/', '/stats'].some((path) => path === pathname);
+
     return (
         <html lang="en" className="h-full">
             <body
                 className={`bg-stone-50 text-stone-900 ${firaSans.className} ${firaMono.variable} min-h-screen flex flex-col`}
             >
+                <PageHeader
+                    icon="icon-[mdi--encryption-expiration]"
+                    title="One Time Secret"
+                    text={isShown ? 'Share sensitive messages that self-destruct after being read once.' : undefined}
+                />
+
                 <main className="flex-grow">{children}</main>
-                <footer className="bg-white border-t border-stone-200 py-8">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-stone-500">
-                        <p>
-                            &copy; {new Date().getFullYear()} by{' '}
-                            <Link
-                                href="https://moonbyte.at/"
-                                target="_blank"
-                                className="underline text-sky-600 hover:text-sky-700"
-                            >
-                                m00nbyte
-                            </Link>
-                        </p>
-                    </div>
-                </footer>
+
+                {isShown && (
+                    <footer className="bg-white border-t border-stone-200 py-8">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-stone-500">
+                            <p>
+                                &copy; {new Date().getFullYear()} by{' '}
+                                <Link
+                                    href="https://moonbyte.at/"
+                                    target="_blank"
+                                    className="underline text-sky-600 hover:text-sky-700"
+                                >
+                                    m00nbyte
+                                </Link>
+                            </p>
+                        </div>
+                    </footer>
+                )}
             </body>
         </html>
     );

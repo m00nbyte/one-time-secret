@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import QRCode from 'qrcode';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { encodeShareToken, encryptClient } from '@/libs/client-crypto';
+import { encodeShareToken, encryptClient, generateRandomPassword } from '@/libs/client-crypto';
 import {
     EXPIRY_OPTIONS,
     formatBytes,
@@ -33,7 +33,7 @@ interface SecretFormProps {
 
 const SecretForm = ({ onCreated, onToast }: SecretFormProps) => {
     const [content, setContent] = useState('');
-    const [password, setPassword] = useState('');
+    const [password, setPassword] = useState(generateRandomPassword());
     const [enablePassword, setEnablePassword] = useState(false);
     const [expiresInHours, setExpiresInHours] = useState(24);
     const [enableMaxViews, setEnableMaxViews] = useState(false);
@@ -42,8 +42,9 @@ const SecretForm = ({ onCreated, onToast }: SecretFormProps) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [expiryOpen, setExpiryOpen] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [passwordFocused, setPasswordFocused] = useState(false);
     const expiryRef = useRef<HTMLDivElement>(null);
+    const passwordRef = useRef<HTMLInputElement>(null);
 
     const { byteLength, tooLarge } = useMemo(
         () => ({
@@ -153,7 +154,7 @@ const SecretForm = ({ onCreated, onToast }: SecretFormProps) => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: 0.05, ease: 'easeOut' }}
-            className="bg-white border border-stone-200 rounded-xl p-6 pt-4 shadow-sm"
+            className="bg-white border border-stone-200 rounded-xl p-4 shadow-sm"
         >
             <textarea
                 id="content"
@@ -175,8 +176,10 @@ const SecretForm = ({ onCreated, onToast }: SecretFormProps) => {
                         disabled={loading}
                         className="flex items-center gap-2 px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer disabled:opacity-50"
                     >
-                        <span className="icon-[solar--clock-circle-bold] text-sky-700 -mt-0.5"></span>
-                        Expires in {EXPIRY_OPTIONS.find((o) => o.hours === expiresInHours)?.label ?? '24 hours'}
+                        <span className="icon-[solar--clock-circle-bold] text-sky-700"></span>
+                        <span className="mt-[0.05rem]">
+                            Expires in {EXPIRY_OPTIONS.find((o) => o.hours === expiresInHours)?.label ?? '24 hours'}
+                        </span>
                         <span
                             className={`icon-[solar--alt-arrow-down-bold] text-stone-400 transition-transform ${
                                 expiryOpen ? 'rotate-180' : ''
@@ -217,8 +220,7 @@ const SecretForm = ({ onCreated, onToast }: SecretFormProps) => {
                         onClick={() => {
                             setEnablePassword(!enablePassword);
                             if (enablePassword) {
-                                setPassword('');
-                                setShowPassword(false);
+                                setPassword(generateRandomPassword());
                                 setMaxAttempts('5');
                             }
                         }}
@@ -236,8 +238,7 @@ const SecretForm = ({ onCreated, onToast }: SecretFormProps) => {
                             onClick={() => {
                                 setEnablePassword(!enablePassword);
                                 if (enablePassword) {
-                                    setPassword('');
-                                    setShowPassword(false);
+                                    setPassword(generateRandomPassword());
                                     setMaxAttempts('5');
                                 }
                             }}
@@ -274,27 +275,32 @@ const SecretForm = ({ onCreated, onToast }: SecretFormProps) => {
                                             <div className="relative">
                                                 <input
                                                     id="password"
-                                                    type={showPassword ? 'text' : 'password'}
+                                                    ref={passwordRef}
+                                                    type={passwordFocused ? 'text' : 'password'}
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
+                                                    onFocus={() => setPasswordFocused(true)}
+                                                    onBlur={() => setPasswordFocused(false)}
                                                     placeholder="Enter a passphrase"
-                                                    className="w-full px-4 py-2.5 pr-11 bg-white border border-stone-300 rounded-lg focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-stone-900 placeholder-stone-400 text-sm"
+                                                    className="w-full px-4 py-2.5 pl-4 pr-11 bg-white border border-stone-300 rounded-lg focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-stone-900 placeholder-stone-400 text-sm"
                                                     disabled={loading}
                                                     autoComplete="new-password"
+                                                    autoFocus
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    onClick={() => {
+                                                        setPassword(generateRandomPassword());
+                                                        setPasswordFocused(true);
+                                                        passwordRef.current?.focus();
+                                                    }}
+                                                    onMouseDown={(e) => e.preventDefault()}
                                                     disabled={loading}
                                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-sky-500 transition-colors cursor-pointer p-1"
-                                                    title={showPassword ? 'Hide passphrase' : 'Show passphrase'}
-                                                    aria-label={showPassword ? 'Hide passphrase' : 'Show passphrase'}
+                                                    title="Generate random passphrase"
+                                                    aria-label="Generate random passphrase"
                                                 >
-                                                    {showPassword ? (
-                                                        <span className="icon-[mdi--eye-off-outline] text-lg mt-1"></span>
-                                                    ) : (
-                                                        <span className="icon-[mdi--eye-outline] text-lg mt-1"></span>
-                                                    )}
+                                                    <span className="icon-[game-icons--perspective-dice-six-faces-random] text-base mt-1"></span>
                                                 </button>
                                             </div>
                                         </div>

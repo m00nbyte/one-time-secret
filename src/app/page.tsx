@@ -2,13 +2,12 @@
 
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useScroll, useTransform } from 'motion/react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import CustomToast from '@/components/CustomToast';
 import FeatureCards from '@/components/FeatureCards';
-import PageHeader from '@/components/PageHeader';
 import SecretForm, { type CreatedSecret } from '@/components/SecretForm';
 import SecretResult from '@/components/SecretResult';
 import UseCases from '@/components/UseCases';
@@ -23,6 +22,10 @@ function Home() {
         const timer = setTimeout(() => setToastVisible(false), 2500);
         return () => clearTimeout(timer);
     }, [toastVisible]);
+
+    const { scrollY } = useScroll();
+    const cardScale = useTransform(scrollY, [0, 300], [0.9, 1]);
+    const formScale = useTransform(scrollY, [200, 500], [1, 0.9]);
 
     function showToast(message = 'Link copied to clipboard') {
         setToastMessage(message);
@@ -40,12 +43,6 @@ function Home() {
     return (
         <div className="container mx-auto bg-stone-50 text-stone-900 p-4 md:p-6">
             <div className="max-w-4xl mx-auto flex flex-col gap-6">
-                <PageHeader
-                    icon="icon-[mdi--encryption-expiration]"
-                    title="One Time Secret"
-                    text="Share sensitive messages that self-destruct after being read once."
-                />
-
                 {result ? (
                     <SecretResult
                         url={result.url}
@@ -57,7 +54,9 @@ function Home() {
                         onReset={resetForm}
                     />
                 ) : (
-                    <SecretForm onCreated={handleCreated} onToast={showToast} />
+                    <motion.div style={{ scale: formScale, transformOrigin: 'top center' }}>
+                        <SecretForm onCreated={handleCreated} onToast={showToast} />
+                    </motion.div>
                 )}
 
                 {!result && (
@@ -66,6 +65,7 @@ function Home() {
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.2, delay: 0.1, ease: 'easeOut' }}
+                            style={{ scale: cardScale, transformOrigin: 'top center' }}
                         >
                             <FeatureCards />
                         </motion.div>
@@ -73,6 +73,7 @@ function Home() {
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.2, delay: 0.15, ease: 'easeOut' }}
+                            style={{ scale: cardScale, transformOrigin: 'top center' }}
                         >
                             <UseCases />
                         </motion.div>

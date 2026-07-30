@@ -30,9 +30,9 @@ const FeatureCards = () => {
             text: 'No IP logs or tracking'
         },
         {
-            icon: 'icon-[solar--bolt-bold]',
-            title: 'No Sign-up',
-            text: 'Start sharing instantly'
+            icon: 'icon-[mdi--shield-check]',
+            title: 'Hosted in EU',
+            text: 'GDPR compliant & EU-based'
         }
     ];
 

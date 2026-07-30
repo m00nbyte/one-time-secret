@@ -224,3 +224,57 @@ export async function decryptClient(ciphertextBase64: string, keyHex: string): P
 
     return new TextDecoder().decode(decrypted);
 }
+
+const PASSWORD_LOWERCASE = 'abcdefghijklmnopqrstuvwxyz';
+const PASSWORD_UPPERCASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const PASSWORD_NUMBERS = '0123456789';
+const PASSWORD_SYMBOLS = '!@#$%^&*()-_=+[]{};:,.<>?';
+
+/** Generate a uniformly distributed random integer in [0, max) using rejection sampling. */
+function secureRandomInt(max: number): number {
+    const buffer = new Uint8Array(4);
+    const limit = 0x100000000 - (0x100000000 % max);
+
+    let value: number;
+
+    do {
+        crypto.getRandomValues(buffer);
+        value = (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24)) >>> 0;
+    } while (value >= limit);
+
+    return value % max;
+}
+
+/** Pick a random character from `chars` using cryptographically secure randomness. */
+function pickRandomChar(chars: string): string {
+    return chars[secureRandomInt(chars.length)];
+}
+
+/**
+ * Generate a cryptographically secure random password containing at least
+ * one lowercase letter, one uppercase letter, one digit, and one symbol.
+ */
+export function generateRandomPassword(length = 16): string {
+    const sets = [PASSWORD_LOWERCASE, PASSWORD_UPPERCASE, PASSWORD_NUMBERS, PASSWORD_SYMBOLS];
+    const allChars = sets.join('');
+
+    const chars: string[] = [];
+
+    // Guarantee at least one character from each category
+    for (const set of sets) {
+        chars.push(pickRandomChar(set));
+    }
+
+    // Fill the remaining slots randomly from all characters
+    for (let i = chars.length; i < length; i++) {
+        chars.push(pickRandomChar(allChars));
+    }
+
+    // Fisher–Yates shuffle to avoid predictable positions
+    for (let i = chars.length - 1; i > 0; i--) {
+        const j = secureRandomInt(i + 1);
+        [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+
+    return chars.join('');
+}
