@@ -183,20 +183,20 @@ function StatsPage() {
                                             description="All secrets created since launch."
                                         />
                                         <StatCard
-                                            icon="icon-[solar--key-bold]"
-                                            value={data.totals.withPassword}
-                                            label="With passphrase"
-                                            accent="bg-sky-100 text-sky-600"
-                                            color="text-sky-600"
-                                            description="Secrets protected with a passphrase."
-                                        />
-                                        <StatCard
                                             icon="icon-[solar--eye-bold]"
                                             value={data.totals.withoutPassword}
                                             label="Without passphrase"
                                             accent="bg-sky-100 text-sky-600"
                                             color="text-sky-600"
                                             description="Secrets shared without a passphrase."
+                                        />
+                                        <StatCard
+                                            icon="icon-[solar--key-bold]"
+                                            value={data.totals.withPassword}
+                                            label="With passphrase"
+                                            accent="bg-sky-100 text-sky-600"
+                                            color="text-sky-600"
+                                            description="Secrets protected with a passphrase."
                                         />
                                         <RatioCard
                                             icon="icon-[solar--key-bold]"
