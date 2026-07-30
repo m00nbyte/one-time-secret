@@ -98,7 +98,7 @@ function StatsPage() {
         {
             icon: 'icon-[solar--database-bold]',
             value: todayTotals.created,
-            label: 'Created today',
+            label: 'Created',
             accent: 'bg-sky-100 text-sky-600',
             color: 'text-sky-600',
             description: 'New secrets created since midnight.'
@@ -106,7 +106,7 @@ function StatsPage() {
         {
             icon: 'icon-[solar--eye-scan-bold]',
             value: todayTotals.consumed,
-            label: 'Consumed today',
+            label: 'Consumed',
             accent: 'bg-green-100 text-green-600',
             color: 'text-green-600',
             description: 'Secrets viewed since midnight.'
@@ -114,7 +114,7 @@ function StatsPage() {
         {
             icon: 'icon-[solar--clock-circle-bold]',
             value: todayTotals.expired,
-            label: 'Expired today',
+            label: 'Expired',
             accent: 'bg-amber-100 text-amber-600',
             color: 'text-amber-600',
             description: 'Secrets that timed out today.'
@@ -122,7 +122,7 @@ function StatsPage() {
         {
             icon: 'icon-[solar--lock-keyhole-bold]',
             value: todayTotals.locked,
-            label: 'Locked today',
+            label: 'Locked',
             accent: 'bg-red-100 text-red-600',
             color: 'text-red-600',
             description: 'Secrets locked from failed attempts.'
